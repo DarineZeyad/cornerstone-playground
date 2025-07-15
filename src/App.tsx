@@ -88,12 +88,8 @@ function App() {
 
       if (useGoogleHealthcare && dicomStorePath && bearerToken) {
         const baseUrl = dicomStorePath.split("/studies/")[0];
-        const proxyUrl = dicomStorePath.replace(
-          "https://healthcare.googleapis.com",
-          "/healthcare-api"
-        );
 
-        const studyResponse = await fetch(`${proxyUrl}/metadata`, {
+        const studyResponse = await fetch(`${dicomStorePath}/metadata`, {
           headers: {
             Authorization: `Bearer ${bearerToken}`,
             Accept: "application/dicom+json",
@@ -114,6 +110,17 @@ function App() {
         }
 
         const studyUid = dicomStorePath.split("/studies/")[1];
+
+        const SOP_CLASS_UID = "00020002";
+        instances = instances.filter((instance: any) => {
+          return (
+            instance[SOP_CLASS_UID]?.Value[0] !==
+              "1.2.840.10008.5.1.4.1.1.11.1" && // PR instances
+            instance[SOP_CLASS_UID]?.Value[0] !==
+              "1.2.840.10008.5.1.4.1.1.88.22" // Enhanced SR
+          );
+        });
+
         imageIds = instances.map(
           (instance: any) =>
             `wadors:${baseUrl}/studies/${studyUid}/series/${instance["0020000E"]?.Value?.[0]}/instances/${instance["00020003"]?.Value?.[0]}/frames/1`
